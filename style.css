@@ -1,0 +1,54 @@
+ body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .note-font {
+            font-family: 'Kalam', cursive;
+        }
+        .hide {
+            display: none !important;
+        }
+        .fade-in {
+            animation: fadeIn 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1; 
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8; 
+        }
+        .sticky-note {
+            box-shadow: 0 4px 10px rgba(0,0,0,0.06);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .sticky-note:hover {
+            transform: scale(1.03) rotate(0.5deg);
+            box-shadow: 0 10px 15px rgba(0,0,0,0.1);
+        }
+        .custom-checkbox input:checked + div {
+            background-color: #6366f1;
+            border-color: #6366f1;
+        }
+        .custom-checkbox input:checked + div svg {
+            display: block;
+        }
+        .vault-card {
+            transition: all 0.3s ease;
+        }
+        .vault-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 20px -8px rgba(0, 0, 0, 0.15);
+        }

@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SMART HABBIT TRACKER - Premium Edition</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Kalam:wght@400;700&display=swap" rel="stylesheet">
+   
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <link rel="stylesheet" href="style.css">
+
+</head>
+<body class="h-screen w-screen overflow-hidden flex items-center justify-center bg-slate-100">
+
+   
+    <div id="custom-modal" class="fixed inset-0 bg-slate-900/40 z-50 hidden flex items-center justify-center backdrop-blur-sm transition-all">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 transform scale-95 transition-all duration-300 border border-slate-100" id="modal-content">
+            <div class="flex items-center justify-center w-12 h-12 rounded-full bg-indigo-50 mx-auto mb-4" id="modal-icon-container">
+                <i class="fas fa-bell text-indigo-600 text-xl" id="modal-icon"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-800 text-center mb-1" id="modal-title">Notification</h3>
+            <p class="text-sm text-slate-500 text-center mb-6 leading-relaxed" id="modal-message">Notification message here.</p>
+            <button onclick="closeModal()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 px-4 rounded-xl shadow-md shadow-indigo-100 transition-all text-sm">
+                Got it
+            </button>
+        </div>
+    </div>
+
+    <!-- Active Siren / Loud Alarm Modal with Loop Ringtone -->
+    <div id="alarm-trigger-modal" class="fixed inset-0 bg-indigo-950/70 z-50 hidden flex items-center justify-center backdrop-blur-md">
+        <div class="bg-white rounded-2xl shadow-2xl p-8 max-w-sm w-full mx-4 border-2 border-indigo-500 text-center animate-bounce">
+            <div class="w-16 h-16 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto mb-4">
+                <i class="fas fa-bell fa-shake text-2xl"></i>
+            </div>
+            <h2 class="text-lg font-extrabold text-indigo-600 mb-1">REMINDER TRIGGERED!</h2>
+            <p class="text-xs text-slate-400 uppercase tracking-widest font-bold mb-3" id="triggered-alarm-time">00:00 AM</p>
+            <h3 class="text-base font-bold text-slate-800 mb-6" id="triggered-alarm-title">Execution Event</h3>
+            <button onclick="stopSirenLoop()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-extrabold py-3 px-4 rounded-xl shadow-lg shadow-indigo-200 transition-all text-sm uppercase tracking-wider">
+                <i class="fas fa-volume-mute mr-2"></i> Stop Alert Tone
+            </button>
+        </div>
+    </div>
+
+    <!-- Edit Reminder Modal for Rename & Reschedule -->
+    <div id="edit-reminder-modal" class="fixed inset-0 bg-slate-900/40 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-slate-100 fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-base font-bold text-slate-800"><i class="fas fa-clock text-indigo-500 mr-2"></i>Edit Schedule</h3>
+                <button onclick="closeEditReminderModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="space-y-4">
+                <input type="hidden" id="edit-reminder-id">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Event Title (Rename)</label>
+                    <input type="text" id="edit-reminder-title" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Date & Time (Reschedule)</label>
+                    <input type="datetime-local" id="edit-reminder-time" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-600">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="closeEditReminderModal()" class="flex-1 py-2.5 text-xs font-bold text-slate-500 bg-slate-100 hover:bg-slate-200 rounded-xl transition">
+                        Cancel
+                    </button>
+                    <button onclick="submitEditReminder()" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-2.5 rounded-xl transition text-xs font-bold shadow-md">
+                        Save Changes
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- OTP & PASSWORD RESET MODAL -->
+    <div id="otp-reset-modal" class="fixed inset-0 bg-slate-900/40 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-slate-100 fade-in">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-base font-bold text-slate-800" id="otp-modal-title">Reset Password</h3>
+                <button onclick="closeOtpModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times"></i></button>
+            </div>
+
+            <!-- STEP 1: Enter Email/Phone -->
+            <div id="otp-step-email" class="space-y-4">
+                <p class="text-xs text-slate-500 leading-relaxed">Apni registered email id ya mobile number enter karein. Hum verification code instantly trigger karenge.</p>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Registered Identity</label>
+                    <input type="text" id="otp-email-input" placeholder="user@domain.com or 9876543210" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all">
+                </div>
+                <button onclick="sendOtpToEmail()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition text-sm flex items-center justify-center gap-2">
+                    Send Verification OTP <i class="fas fa-paper-plane text-xs"></i>
+                </button>
+            </div>
+
+            <!-- STEP 2: Verify OTP -->
+            <div id="otp-step-verify" class="space-y-4 hidden">
+                <p class="text-xs text-slate-500 leading-relaxed">System ne verification code generate kar diya hai. Kripya nache 6-digit pin enter karein.</p>
+                <div class="bg-indigo-50 border border-indigo-100 p-2.5 rounded-xl mb-2 text-center">
+                    <span class="text-[11px] font-extrabold text-indigo-700 tracking-wide" id="test-otp-helper">Demo Mode: OTP is '123456'</span>
+                </div>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Enter 6-Digit OTP</label>
+                    <input type="text" id="otp-code-input" maxlength="6" placeholder="******" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl text-center font-bold tracking-widest focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+                <button onclick="verifyOtpCode()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition text-sm">
+                    Verify Code
+                </button>
+            </div>
+
+            <!-- STEP 3: Change Password -->
+            <div id="otp-step-newpass" class="space-y-4 hidden">
+                <p class="text-xs text-slate-500 leading-relaxed">Verification safal raha! Ab aap apna naya secure password set kar sakte hain.</p>
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">New Password</label>
+                    <input type="password" id="otp-new-password" placeholder="••••••••" class="w-full px-3.5 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                </div>
+                <button onclick="submitNewPassword()" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-2.5 rounded-xl transition text-sm">
+                    Update Password <i class="fas fa-check-circle ml-1.5"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Prompt Modal for Input Editing -->
+    <div id="prompt-modal" class="fixed inset-0 bg-slate-900/40 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+        <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 border border-slate-100">
+            <h3 class="text-base font-bold text-slate-800 mb-3" id="prompt-title">Edit Item</h3>
+            <input type="text" id="prompt-input" class="w-full border border-slate-200 rounded-xl px-4 py-2.5 mb-4 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 text-sm">
+            <div class="flex justify-end space-x-3">
+                <button onclick="closePrompt()" class="px-4 py-2 text-xs font-semibold text-slate-500 hover:bg-slate-50 rounded-xl transition">Cancel</button>
+                <button id="prompt-confirm-btn" class="px-4 py-2 text-xs font-semibold bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================= PREMIUM LOGIN & SIGNUP SCREEN ================= -->
+    <div id="login-view" class="w-full max-w-md p-8 bg-white rounded-2xl shadow-xl border border-slate-100 fade-in mx-4 my-auto overflow-y-auto max-h-[90vh]">
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-indigo-50 text-indigo-600 mb-3.5 shadow-sm">
+                <!-- Premium SVG Check-Loop Logo -->
+                <svg class="w-10 h-10" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="logo-grad" x1="0%" y1="0%" x2="100%" y2="100%">
+                            <stop offset="0%" stop-color="#6366f1" />
+                            <stop offset="100%" stop-color="#a855f7" />
+                        </linearGradient>
+                    </defs>
+                    <circle cx="50" cy="50" r="42" stroke="url(#logo-grad)" stroke-width="8" stroke-dasharray="190 25" fill="none"/>
+                    <path d="M36 52L45 61L64 40" stroke="url(#logo-grad)" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="64" cy="40" r="5" fill="#a855f7" />
+                </svg>
+            </div>
+            <h1 class="text-2xl font-extrabold text-slate-800 tracking-tight">SMART HABBIT TRACKER</h1>
+            <p class="text-slate-400 mt-1 text-xs" id="auth-subtitle">Naye habits banayein aur daily progress check karein.</p>
+        </div>
+
+        <!-- Authenticator Tabs -->
+        <div class="flex border-b border-slate-100 mb-6">
+            <button id="tab-signup" onclick="toggleAuthMode('signup')" class="flex-1 pb-3 text-center border-b-2 border-indigo-600 font-semibold text-indigo-600 text-sm focus:outline-none">
+                Create Account
+            </button>
+            <button id="tab-login" onclick="toggleAuthMode('login')" class="flex-1 pb-3 text-center border-b-2 border-transparent text-slate-400 font-medium text-sm focus:outline-none">
+                Sign In
+            </button>
+        </div>
+
+        <!-- Main Auth Form -->
+        <form id="login-form" onsubmit="handleAuthSubmit(event)" class="space-y-4">
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Email Address</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <i class="fas fa-envelope text-slate-400 text-xs"></i>
+                    </div>
+                    <input type="email" id="auth-email" required placeholder="name@domain.com" class="w-full pl-10 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1.5">Password</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <i class="fas fa-lock text-slate-400 text-xs"></i>
+                    </div>
+                    <input type="password" id="auth-password" required placeholder="••••••••" class="w-full pl-10 pr-10 py-2.5 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/10 focus:border-indigo-500 transition-all">
+                    <button type="button" onclick="togglePasswordVisibility()" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-indigo-600 transition-colors" title="Toggle password visibility">
+                        <i class="fas fa-eye text-xs" id="password-toggle-icon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between text-xs text-slate-400" id="login-extra-options">
+                <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="checkbox" class="rounded border-slate-200 text-indigo-600 focus:ring-indigo-500">
+                    <span>Keep me logged in</span>
+                </label>
+                <a href="#" onclick="showForgotPasswordOtpModal()" class="text-indigo-600 hover:underline font-semibold">Forgot password?</a>
+            </div>
+
+            <!-- Action Button -->
+            <button type="submit" id="auth-submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-100 transition-all text-sm flex items-center justify-center gap-2">
+                Create Account <i class="fas fa-user-plus text-xs"></i>
+            </button>
+        </form>
+    </div>
+
+    <!-- ================= MAIN APP WORKSPACE ================= -->
+    <div id="main-app" class="hide h-full w-full flex bg-slate-50 animate-fade-in">
+        <!-- Sidebar Navigation -->
+        <aside class="w-64 bg-white border-r border-slate-200/80 flex flex-col hidden md:flex shrink-0">
+            <div class="p-6 border-b border-slate-100 flex items-center space-x-3">
+                <div class="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center text-white font-bold shadow-md shadow-indigo-100">
+                    <svg class="w-6 h-6 stroke-white" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="42" stroke-width="12" stroke-dasharray="180 30"/>
+                        <path d="M36 52L45 61L64 40" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="text-xs font-extrabold text-slate-800 tracking-tight">SMART HABBIT TRACKER</span>
+            </div>
+            
+            <div class="p-4 border-b border-slate-100 bg-slate-50/50">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold text-sm" id="sidebar-avatar">U</div>
+                    <div class="overflow-hidden">
+                        <p class="text-xs font-bold text-slate-800 truncate" id="sidebar-username">Connecting...</p>
+                        <p class="text-[10px] text-slate-400 font-medium truncate" id="sidebar-profession">Profession</p>
+                    </div>
+                </div>
+                <!-- Database Link Status Indicator -->
+                <div class="mt-2.5 flex items-center space-x-1.5 px-2 py-1 rounded-lg bg-emerald-50 border border-emerald-100 w-max cursor-help" id="sync-status-container">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" id="sync-status-dot"></span>
+                    <span class="text-[9px] font-extrabold text-emerald-700 tracking-wide uppercase" id="sync-status-text">Local DB Safe</span>
+                </div>
+            </div>
+
+            <!-- Nav Options -->
+            <nav class="flex-1 p-4 space-y-1.5 overflow-y-auto">
+                <button onclick="navigate('dashboard')" id="nav-dashboard" class="w-full flex items-center space-x-3 px-4 py-2.5 text-xs font-bold text-slate-500 rounded-xl hover:bg-slate-50 transition-all">
+                    <i class="fas fa-chart-pie w-4 text-center"></i> <span>Dashboard</span>
+                </button>
+                <button onclick="navigate('habits')" id="nav-habits" class="w-full flex items-center space-x-3 px-4 py-2.5 text-xs font-bold text-slate-500 rounded-xl hover:bg-slate-50 transition-all">
+                    <i class="fas fa-check-square w-4 text-center"></i> <span>Habits & Tasks</span>
+                </button>
+                <button onclick="navigate('vault')" id="nav-vault" class="w-full flex items-center space-x-3 px-4 py-2.5 text-xs font-bold text-slate-500 rounded-xl hover:bg-slate-50 transition-all">
+                    <i class="fas fa-vault w-4 text-center"></i> <span>Digital Vault</span>
+                </button>
+                <button onclick="navigate('reminders')" id="nav-reminders" class="w-full flex items-center space-x-3 px-4 py-2.5 text-xs font-bold text-slate-500 rounded-xl hover:bg-slate-50 transition-all">
+                    <i class="fas fa-bell w-4 text-center"></i> <span>Alarms & Reminders</span>
+                </button>
+                <button onclick="navigate('notes')" id="nav-notes" class="w-full flex items-center space-x-3 px-4 py-2.5 text-xs font-bold text-slate-500 rounded-xl hover:bg-slate-50 transition-all">
+                    <i class="fas fa-sticky-note w-4 text-center"></i> <span>Sticky Notes</span>
+                </button>
+                <button onclick="navigate('profile')" id="nav-profile" class="w-full flex items-center space-x-3 px-4 py-2.5 text-xs font-bold text-slate-500 rounded-xl hover:bg-slate-50 transition-all">
+                    <i class="fas fa-user-circle w-4 text-center"></i> <span>My Profile</span>
+                </button>
+            </nav>
+
+            <div class="p-4 border-t border-slate-100">
+                <button onclick="logout()" class="w-full flex items-center space-x-3 px-4 py-2.5 text-xs font-bold text-red-600 bg-red-50/50 rounded-xl hover:bg-red-50 transition-all">
+                    <i class="fas fa-sign-out-alt w-4 text-center"></i> <span>Logout Account</span>
+                </button>
+            </div>
+        </aside>
+
+        <!-- Mobile Navigation Header -->
+        <div class="md:hidden fixed top-0 left-0 right-0 bg-white border-b border-slate-200 p-4 flex justify-between items-center z-40 shadow-sm">
+            <div class="flex items-center space-x-2">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white">
+                    <svg class="w-5.5 h-5.5 stroke-white" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <circle cx="50" cy="50" r="42" stroke-width="12" stroke-dasharray="180 30"/>
+                        <path d="M36 52L45 61L64 40" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                </div>
+                <span class="font-extrabold text-xs text-slate-800">SMART HABBIT TRACKER</span>
+            </div>
+            <select onchange="navigate(this.value)" class="border border-slate-200 rounded-lg py-1.5 px-3 text-xs font-bold text-slate-700 bg-slate-50 focus:outline-none focus:ring-1 focus:ring-indigo-500">
+                <option value="dashboard">Dashboard</option>
+                <option value="habits">Habits & Tasks</option>
+                <option value="vault">Digital Vault</option>
+                <option value="reminders">Alarms & Reminders</option>
+                <option value="notes">Sticky Notes</option>
+                <option value="profile">My Profile</option>
+            </select>
+        </div>
+
+        <!-- Main Display Content Container -->
+        <main class="flex-1 overflow-y-auto p-6 md:p-8 pt-20 md:pt-8">
+            <!-- Dashboard View -->
+            <div id="view-dashboard" class="view-section fade-in">
+                <div class="mb-6">
+                    <h2 class="text-xl font-bold text-slate-800">Welcome back, <span id="dash-name" class="text-indigo-600">User</span>!</h2>
+                    <p class="text-xs text-slate-400 mt-0.5">Real-time stats synced securely with localized DB storage.</p>
+                </div>
+                
+                <!-- Stats Row -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-8">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center space-x-4">
+                        <div class="w-11 h-11 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-lg">
+                            <i class="fas fa-tasks"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Total Habits Set</p>
+                            <p class="text-xl font-extrabold text-slate-800" id="stat-total">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center space-x-4">
+                        <div class="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-lg">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Completed Today</p>
+                            <p class="text-xl font-extrabold text-slate-800" id="stat-completed">0</p>
+                        </div>
+                    </div>
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 flex items-center space-x-4">
+                        <div class="w-11 h-11 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center text-lg">
+                            <i class="fas fa-hourglass-half"></i>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-wide">Remaining Actions</p>
+                            <p class="text-xl font-extrabold text-slate-800" id="stat-remaining">0</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Productive Analytics Grid -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6">
+                        <h3 class="text-sm font-bold text-slate-800 mb-1">Productivity Score Measure</h3>
+                        <p class="text-[11px] text-slate-400 mb-4">Calculated algorithmically on task accomplishments.</p>
+                        <div class="flex items-center justify-center h-48 relative">
+                            <div id="chart-container" class="w-full h-full flex items-center justify-center relative">
+                                <canvas id="productivityChart" class="w-full h-full"></canvas>
+                                <div class="absolute inset-0 flex items-center justify-center flex-col pt-1">
+                                    <span class="text-2xl font-extrabold text-indigo-600" id="prod-percent">0%</span>
+                                    <span class="text-[10px] text-slate-400 font-semibold tracking-wider uppercase">Efficiency</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-6 flex flex-col justify-between">
+                        <div>
+                            <h3 class="text-sm font-bold text-slate-800 mb-1">Upcoming Live Reminders</h3>
+                            <p class="text-[11px] text-slate-400 mb-4">Active alerts synced with clock system.</p>
+                            <div id="dash-reminders-list" class="space-y-2.5">
+                                <p class="text-slate-400 text-xs italic">No upcoming reminders listed.</p>
+                            </div>
+                        </div>
+                        <button onclick="navigate('reminders')" class="mt-4 text-xs text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1.5 self-start">
+                            View active schedules &rarr;
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Habits & Tasks View -->
+            <div id="view-habits" class="view-section hide fade-in">
+                <div class="flex justify-between items-end mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Habits & Routines</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Automate consistent performance via checklists.</p>
+                    </div>
+                    <div>
+                        <span class="text-xs font-bold text-indigo-600 bg-indigo-50 border border-indigo-100 px-3.5 py-1.5 rounded-full" id="task-counter-badge">0 / 0 Done</span>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+                    <div class="p-4 border-b border-slate-100 bg-slate-50/40 flex gap-2.5">
+                        <input type="text" id="new-task-input" placeholder="Create a new habit or objective..." class="flex-1 text-xs px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500">
+                        <button onclick="addTask()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-all text-xs font-bold shadow-md shadow-indigo-100">Add Goal</button>
+                    </div>
+                    
+                    <ul id="task-list" class="divide-y divide-slate-100 max-h-[55vh] overflow-y-auto">
+                        <!-- Dynamic items loaded -->
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Digital Vault / Safe Storage Section -->
+            <div id="view-vault" class="view-section hide fade-in">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Digital Asset Vault</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Organize links, YouTube/Insta content, PDFs, images, and sheets unlimitedly.</p>
+                    </div>
+                    <button onclick="openAddVaultModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2.5 rounded-xl shadow-md shadow-indigo-100 transition-all flex items-center justify-center text-xs font-bold gap-2">
+                        <i class="fas fa-plus"></i> Save Resource
+                    </button>
+                </div>
+
+                <!-- Filters & Search Toolbar -->
+                <div class="flex flex-col sm:flex-row gap-4 mb-6 justify-between items-center">
+                    <div class="flex bg-slate-100 p-1 rounded-xl w-full sm:w-auto overflow-x-auto whitespace-nowrap">
+                        <button onclick="filterVault('all')" id="vtab-all" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-800 shadow-sm transition-all">All Files</button>
+                        <button onclick="filterVault('video')" id="vtab-video" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 transition-all">Videos</button>
+                        <button onclick="filterVault('document')" id="vtab-document" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 transition-all">Documents</button>
+                        <button onclick="filterVault('image')" id="vtab-image" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 transition-all">Images</button>
+                        <button onclick="filterVault('link')" id="vtab-link" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 transition-all">Web Links</button>
+                    </div>
+                    <div class="relative w-full sm:w-64">
+                        <input type="text" id="vault-search" oninput="searchVault()" placeholder="Search assets..." class="w-full pl-9 pr-4 py-2 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                        <i class="fas fa-search text-slate-400 absolute left-3.5 top-3 text-xs"></i>
+                    </div>
+                </div>
+
+                <!-- Resource Vault Grid -->
+                <div id="vault-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+                    <!-- Dynamic vault cards populated here -->
+                </div>
+
+                <!-- Save Asset Modal with cloud upload -->
+                <div id="vault-modal" class="fixed inset-0 bg-slate-900/40 z-50 hidden flex items-center justify-center backdrop-blur-sm">
+                    <div class="bg-white rounded-2xl shadow-2xl p-6 max-w-md w-full mx-4 fade-in border border-slate-100">
+                        <div class="flex justify-between items-center mb-4">
+                            <h3 class="text-base font-bold text-slate-800">Add Asset to Vault</h3>
+                            <button onclick="closeVaultModal()" class="text-slate-400 hover:text-slate-600"><i class="fas fa-times text-base"></i></button>
+                        </div>
+                        <form id="vault-form" onsubmit="saveVaultItem(event)" class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Asset Label</label>
+                                <input type="text" id="vault-title" required placeholder="e.g. YouTube Flutter Class, College PDF, Profile Photo" class="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Category Type</label>
+                                <select id="vault-type" onchange="toggleVaultInputType()" class="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700">
+                                    <option value="video">Youtube / Instagram Reels URL</option>
+                                    <option value="link">Website Link / Notion Docs URL</option>
+                                    <option value="document">Upload PDF / Doc (Sandbox conversion)</option>
+                                    <option value="image">Upload Image (Sandbox conversion)</option>
+                                </select>
+                            </div>
+
+                            <!-- URL Input Context -->
+                            <div id="vault-url-container">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Web URL</label>
+                                <input type="url" id="vault-url" placeholder="https://..." class="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                            </div>
+
+                            <!-- File Upload Container -->
+                            <div id="vault-file-container" class="hidden">
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Select File (Sandbox Safe)</label>
+                                <div class="border-2 border-dashed border-slate-200 hover:border-indigo-500 rounded-xl p-5 transition text-center cursor-pointer relative bg-slate-50/50">
+                                    <input type="file" id="vault-file" onchange="handleVaultFileSelect()" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer">
+                                    <div id="upload-status-display">
+                                        <i class="fas fa-cloud-upload-alt text-2xl text-slate-400 mb-1.5" id="upload-icon-status"></i>
+                                        <p class="text-[11px] font-medium text-slate-500" id="file-upload-label">Click to select & upload file</p>
+                                        <span class="text-[9px] text-indigo-500 font-semibold" id="file-upload-size-limit">Protected sandbox offline converter</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Description Notes</label>
+                                <textarea id="vault-notes" rows="2" placeholder="Mention tags or context..." class="w-full px-3.5 py-2 text-xs border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20"></textarea>
+                            </div>
+
+                            <button type="submit" id="vault-save-submit-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2.5 rounded-xl transition-all shadow-md shadow-indigo-100 text-xs">
+                                Archive Securely
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Reminders / Alarms View (Upgraded with Passed Alarms, Rename, & Reschedule) -->
+            <div id="view-reminders" class="view-section hide fade-in">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-2">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Active Reminder System</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Maintain clock discipline for schedules, tasks & alarms.</p>
+                    </div>
+                </div>
+
+                <!-- Quick Schedule Form -->
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-6 mt-4">
+                    <h3 class="text-xs font-bold text-slate-800 mb-3.5">Schedule a live alert</h3>
+                    <div class="flex flex-col md:flex-row gap-3">
+                        <input type="text" id="rem-title" placeholder="Event / Objective Name" class="flex-1 text-xs px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20">
+                        <input type="datetime-local" id="rem-time" class="text-xs px-4 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-600">
+                        <button onclick="addReminder()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl transition-all text-xs font-bold shadow-md shadow-indigo-100 whitespace-nowrap">
+                            <i class="fas fa-plus text-[10px] mr-1.5"></i> Schedule Alarm
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Interactive Filters Toolbar -->
+                <div class="flex bg-slate-100 p-1 rounded-xl w-max overflow-x-auto whitespace-nowrap mb-6">
+                    <button onclick="filterReminders('all')" id="rtab-all" class="px-4 py-1.5 rounded-lg text-xs font-bold bg-white text-slate-800 shadow-sm transition-all">All Schedules</button>
+                    <button onclick="filterReminders('active')" id="rtab-active" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 transition-all">Active Alerts</button>
+                    <button onclick="filterReminders('passed')" id="rtab-passed" class="px-4 py-1.5 rounded-lg text-xs font-bold text-slate-500 hover:text-slate-800 transition-all">Passed History</button>
+                </div>
+
+                <!-- Alarm Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="reminders-grid">
+                    <!-- Dynamic Reminders populated here -->
+                </div>
+            </div>
+
+            <!-- Sticky Notes View -->
+            <div id="view-notes" class="view-section hide fade-in h-full flex flex-col">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-800">Popup & Sticky Canvas</h2>
+                        <p class="text-xs text-slate-400 mt-0.5">Write instant brain waves, instructions or goals.</p>
+                    </div>
+                    <button onclick="addNote()" class="bg-amber-400 hover:bg-amber-500 text-slate-800 px-4 py-2 rounded-xl shadow-md shadow-amber-100 transition-all text-xs font-extrabold flex items-center gap-1.5">
+                        <i class="fas fa-plus"></i> Pin Sticky Note
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-10 shadow-inner p-2 bg-slate-100/50 rounded-2xl min-h-[45vh]" id="notes-container">
+                    <!-- Sticky Notes Injected -->
+                </div>
+            </div>
+
+            <!-- Profile View (Now includes elegant compact System preferences) -->
+            <div id="view-profile" class="view-section hide fade-in max-w-4xl mx-auto">
+                <h2 class="text-xl font-bold text-slate-800 mb-5">User Profile Registry</h2>
+                
+                <div class="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden mb-6">
+                    <div class="bg-gradient-to-r from-indigo-500 to-purple-600 h-28 relative">
+                        <div class="absolute -bottom-10 left-6">
+                            <div class="w-20 h-20 bg-white rounded-full p-1 shadow-lg">
+                                <div class="w-full h-full bg-indigo-50 rounded-full flex items-center justify-center text-2xl text-indigo-600 font-extrabold" id="profile-avatar-large">U</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-14 p-6">
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <!-- Left: Editable Personal Profile -->
+                            <form id="profile-form" onsubmit="saveProfile(event)" class="lg:col-span-2 space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Full Name</label>
+                                        <input type="text" id="prof-name" class="w-full text-xs px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-slate-50/50">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Account ID</label>
+                                        <input type="text" id="prof-id" readonly class="w-full text-xs px-3.5 py-2.5 border border-slate-200 rounded-xl bg-slate-100 text-slate-400 cursor-not-allowed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">User Age</label>
+                                        <input type="number" id="prof-age" min="1" max="110" class="w-full text-xs px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-slate-50/50">
+                                    </div>
+                                    <div>
+                                        <label class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide mb-1.5">Profession</label>
+                                        <input type="text" id="prof-profession" placeholder="e.g. Student, Developer" class="w-full text-xs px-3.5 py-2.5 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 bg-slate-50/50">
+                                    </div>
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white px-5 py-2.5 rounded-xl transition-colors text-xs font-bold shadow-md shadow-indigo-100">
+                                        Save Profile Data
+                                    </button>
+                                </div>
+                            </form>
+
+                            <!-- Right: Collapsible Premium Ringtone Preferences -->
+                            <div class="bg-slate-50/70 rounded-2xl border border-slate-100 p-5 flex flex-col justify-between">
+                                <div>
+                                    <h3 class="text-xs font-bold text-slate-700 uppercase tracking-wide mb-3 flex items-center gap-1.5">
+                                        <i class="fas fa-volume-up text-indigo-500 text-sm"></i> Alarm Tune Setup
+                                    </h3>
+                                    <p class="text-[10px] text-slate-400 mb-4 leading-relaxed">Choose soft dynamic alarms to trigger scheduled alerts.</p>
+                                    
+                                    <div class="space-y-3">
+                                        <div>
+                                            <label class="block text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Ringtone Preset</label>
+                                            <select id="siren-preset-select" onchange="changeRingtonePreset()" class="w-full px-3 py-2 border border-slate-200 rounded-xl text-[11px] bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500/20 text-slate-700 font-bold">
+                                                <option value="chime">🎵 Soft Chime (Musical Melody)</option>
+                                                <option value="beep">🔔 Digital Beep (Classic Triplet)</option>
+                                                <option value="zen">🧘 Peaceful Zen (Harmonic Chord)</option>
+                                                <option value="pulse">💓 Ambient Pulse (Sub Beat)</option>
+                                                <option value="retro">👾 Retro Alert (8-Bit Sweep)</option>
+                                            </select>
+                                        </div>
+                                        
+                                        <div class="flex gap-2">
+                                            <button onclick="previewSelectedRingtone()" class="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 text-[10px] font-bold py-2 px-3 rounded-lg transition-colors flex items-center justify-center gap-1">
+                                                <i class="fas fa-play text-[8px]"></i> Play Test
+                                            </button>
+                                            <button onclick="stopSirenLoop()" class="bg-rose-50 hover:bg-rose-100 text-rose-600 text-[10px] font-bold py-2 px-3 rounded-lg transition-colors flex items-center justify-center" title="Stop sound preview">
+                                                <i class="fas fa-stop text-[8px]"></i> Stop
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="text-[9px] text-slate-400 leading-relaxed mt-4 border-t border-slate-200/60 pt-3">
+                                    Alarm sound plays smoothly offline on your device without any network delay.
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- ================= UNIFIED APP CONTROLLER LOGIC SCRIPT ================= -->
+    <script>
+       
+    </script>
+
+    <script src="script.js"></script>
+</body>
+</html>
